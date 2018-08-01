@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">lot</string>
+    <string name="title_home">首页</string>
+    <string name="title_control">控制</string>
+    <string name="title_setting">设置</string>
+    <string name="lamp_off">关</string>
+    <string name="lamp_on">开</string>
+</resources>

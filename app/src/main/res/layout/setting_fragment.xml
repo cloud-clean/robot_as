@@ -1,0 +1,53 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/settring_fragment"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_marginTop="20dp"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="50dp">
+        <TextView
+            android:layout_marginLeft="2dp"
+            android:layout_width="70dp"
+            android:layout_height="50dp"
+            android:text="位置:"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/setting_pos"
+            android:layout_width="120dp"
+            android:layout_height="50dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="50dp">
+        <TextView
+            android:layout_marginLeft="2dp"
+            android:layout_width="70dp"
+            android:layout_height="50dp"
+            android:text="状态:"
+            android:textSize="20sp" />
+
+        <EditText
+            android:id="@+id/setting_status"
+            android:layout_width="120dp"
+            android:layout_height="50dp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/setting_save_btn"
+        android:text="保存"
+        android:textSize="24dp"
+        android:layout_marginRight="40dp"
+        android:layout_width="80dp"
+        android:layout_height="60dp" />
+
+
+
+</LinearLayout>
