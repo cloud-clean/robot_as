@@ -18,8 +18,6 @@ public class IndexFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.index_fragment,container,false);
-        TextView textView = view.findViewById(R.id.index_text);
-        textView.setText("index fragment");
         return view;
     }
 }

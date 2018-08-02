@@ -19,7 +19,6 @@ public class SettingFragment extends Fragment {
 
     private Button saveBtn;
     private EditText posEt;
-    private EditText statusEt;
 
     @Nullable
     @Override
@@ -33,12 +32,10 @@ public class SettingFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         saveBtn = getActivity().findViewById(R.id.setting_save_btn);
         posEt = getActivity().findViewById(R.id.setting_pos);
-        statusEt = getActivity().findViewById(R.id.setting_status);
         SharedPreferences reader = getActivity().getSharedPreferences("status",getActivity().MODE_PRIVATE);
         String pos = reader.getString("position","").toString();
         String status = reader.getString("status","").toString();
         posEt.setText(pos);
-        statusEt.setText(status);
 
 
 
@@ -50,17 +47,7 @@ public class SettingFragment extends Fragment {
                    Toast.makeText(getActivity(),"位置不能为空",Toast.LENGTH_SHORT).show();
                    return;
                }
-               String status = statusEt.getText().toString();
-               if(StringUtil.isEmpty(status)){
-                   Toast.makeText(getActivity(),"状态不能为空",Toast.LENGTH_SHORT).show();
-                   return;
-               }
-               if(!"1".equals(status) && !"0".equals(status)){
-                   Toast.makeText(getActivity(),"状态只能是0和1",Toast.LENGTH_SHORT).show();
-                   return;
-               }
                SharedPreferences.Editor editor = getActivity().getSharedPreferences("status",getActivity().MODE_PRIVATE).edit();
-               editor.putString("status",status);
                editor.putString("position",pos);
                editor.commit();
                 Toast.makeText(getActivity(),"保存成功",Toast.LENGTH_SHORT).show();

@@ -19,8 +19,11 @@ import android.widget.ToggleButton;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.clean.lot.R;
+import com.clean.lot.entity.MessageEvent;
 import com.clean.lot.util.HttpUtil;
 import com.clean.lot.util.StringUtil;
+
+import org.greenrobot.eventbus.EventBus;
 
 
 public class ControlFragment extends Fragment {
@@ -44,48 +47,56 @@ public class ControlFragment extends Fragment {
         lampBtn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         SharedPreferences reader = getActivity().getSharedPreferences("status",getActivity().MODE_PRIVATE);
         String pos = reader.getString("position","").toString();
+        MessageEvent msg = null;
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, final boolean b) {
-                final Handler handler = new Handler(){
-                    @Override
-                    public void handleMessage(Message msg) {
-                        super.handleMessage(msg);
-                        Bundle data = msg.getData();
-                        String res = data.getString("res");
-                        JSONObject json = JSON.parseObject(res);
-                        if(json != null){
-                            if(json.getInteger("code") == 1){
-                                imageView.setImageResource(b?R.drawable.lamp_on:R.drawable.lamp_off);
-                            }
-                        }
-                    }
-                };
+                if(b){
+                    msg = new MessageEvent(pos,"1");
+                }else {
+                    msg = new MessageEvent(pos,"0");
+                }
+                EventBus.getDefault().post(msg);
+                imageView.setImageResource(b?R.drawable.lamp_on:R.drawable.lamp_off);
+//                final Handler handler = new Handler(){
+//                    @Override
+//                    public void handleMessage(Message msg) {
+//                        super.handleMessage(msg);
+//                        Bundle data = msg.getData();
+//                        String res = data.getString("res");
+//                        JSONObject json = JSON.parseObject(res);
+//                        if(json != null){
+//                            if(json.getInteger("code") == 1){
+//                                imageView.setImageResource(b?R.drawable.lamp_on:R.drawable.lamp_off);
+//                            }
+//                        }
+//                    }
+//                };
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        String res;
-                        String pos = reader.getString("position","").toString();
-                        if(StringUtil.isEmpty(pos)){
-                            Toast.makeText(getActivity(),"位置不能为空,请到设置页面设置",Toast.LENGTH_SHORT).show();
-                            return;
-                        }else{
-                            System.out.println("pos:"+pos);
-                        }
-                        if(b){
-                            res = HttpUtil.okGet(String.format("http://202.182.118.148/api/switch?pos=%s&status=%s",pos,"1"));
-                        }else{
-                            res = HttpUtil.okGet(String.format("http://202.182.118.148/api/switch?pos=%s&status=%s",pos,"0"));
-                        }
-
-                        Message msg = new Message();
-                        Bundle bundle = new Bundle();
-                        bundle.putString("res",res);
-                        msg.setData(bundle);
-                        handler.sendMessage(msg);
-
-                    }
-                }).start();
+//                new Thread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        String res;
+//                        String pos = reader.getString("position","").toString();
+//                        if(StringUtil.isEmpty(pos)){
+//                            Toast.makeText(getActivity(),"位置不能为空,请到设置页面设置",Toast.LENGTH_SHORT).show();
+//                            return;
+//                        }else{
+//                            System.out.println("pos:"+pos);
+//                        }
+//                        if(b){
+//                            res = HttpUtil.okGet(String.format("http://202.182.118.148/api/switch?pos=%s&status=%s",pos,"1"));
+//                        }else{
+//                            res = HttpUtil.okGet(String.format("http://202.182.118.148/api/switch?pos=%s&status=%s",pos,"0"));
+//                        }
+//
+//                        Message msg = new Message();
+//                        Bundle bundle = new Bundle();
+//                        bundle.putString("res",res);
+//                        msg.setData(bundle);
+//                        handler.sendMessage(msg);
+//
+//                    }
+//                }).start();
             }
         });
     }
