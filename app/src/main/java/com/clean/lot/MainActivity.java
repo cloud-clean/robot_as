@@ -1,18 +1,20 @@
 package com.clean.lot;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
-import android.widget.TextView;
 
 import com.alibaba.fastjson.JSON;
 import com.clean.lot.entity.MessageEvent;
 import com.clean.lot.fragment.ControlFragment;
 import com.clean.lot.fragment.IndexFragment;
 import com.clean.lot.fragment.SettingFragment;
+import com.clean.lot.util.StringUtil;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions;
@@ -30,9 +32,10 @@ import org.greenrobot.eventbus.ThreadMode;
 public class MainActivity extends AppCompatActivity {
 
     private String ClientId = "lot_";
-    final String mqttServer = "tcp://202.182.118.148:61613";
+    final String mqttServer = "";
     final String pushTopic = "lot";
     private MqttAndroidClient mqttClient;
+    private Fragment currentFragment;
 
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
@@ -45,28 +48,31 @@ public class MainActivity extends AppCompatActivity {
                     Fragment index = getSupportFragmentManager().findFragmentByTag("index");
                     if(index == null){
                         index = new IndexFragment();
-                }
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_contrainer,index,"index")
-                            .commit();
+                    }
+                    switchFragment(R.id.fragment_contrainer,"index",index);
+//                    getSupportFragmentManager().beginTransaction()
+//                            .replace(R.id.fragment_contrainer,index,"index")
+//                            .commit();
                     return true;
                 case R.id.navigation_dashboard:
                     Fragment control = getSupportFragmentManager().findFragmentByTag("control");
                     if(control == null){
                         control = new ControlFragment();
                     }
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_contrainer,control,"control")
-                            .commit();
+                    switchFragment(R.id.fragment_contrainer,"control",control);
+//                    getSupportFragmentManager().beginTransaction()
+//                            .replace(R.id.fragment_contrainer,control,"control")
+//                            .commit();
                     return true;
                 case R.id.navigation_notifications:
                     Fragment settings = getSupportFragmentManager().findFragmentByTag("settings");
                     if(settings == null){
                         settings = new SettingFragment();
                     }
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_contrainer,settings,"settings")
-                            .commit();
+                    switchFragment(R.id.fragment_contrainer,"settings",settings);
+//                    getSupportFragmentManager().beginTransaction()
+//                            .replace(R.id.fragment_contrainer,settings,"settings")
+//                            .commit();
                     return true;
             }
             return false;
@@ -86,9 +92,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        currentFragment = new IndexFragment();
         getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragment_contrainer, new IndexFragment(),"index")
+                .add(R.id.fragment_contrainer, currentFragment,"index")
                 .commit();
+        SharedPreferences reader = getSharedPreferences("settings",MODE_PRIVATE);
+        String mqttServer = reader.getString("mqtt_server","tcp://202.182.118.148:61613").toString();
+        if(StringUtil.isNotEmpty(mqttServer)){
+            if(!mqttServer.startsWith("tcp")){
+                mqttServer = "tcp://"+mqttServer;
+            }
+        }
+
 
         EventBus.getDefault().register(this);
         ClientId  = ClientId+System.currentTimeMillis();
@@ -145,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
             message.setPayload(msg.getBytes());
             message.setQos(1);
             IMqttDeliveryToken token = mqttClient.publish(pushTopic, message);
+            System.out.println("send out msg:"+msg);
         } catch (MqttException e) {
             System.err.println("Error Publishing: " + e.getMessage());
             e.printStackTrace();
@@ -157,6 +173,19 @@ public class MainActivity extends AppCompatActivity {
             String msg = JSON.toJSONString(event);
             publishMessage(msg);
         }
+    }
+
+    private void switchFragment(int id,String targetName,Fragment targetFragment){
+        FragmentTransaction transaction = getSupportFragmentManager()
+                .beginTransaction();
+        if(targetFragment.isAdded()){
+            transaction.hide(currentFragment).show(targetFragment);
+        }else{
+            transaction.hide(currentFragment);
+            transaction.add(id,targetFragment,targetName);
+        }
+        currentFragment = targetFragment;
+        transaction.commit();
     }
 
 
