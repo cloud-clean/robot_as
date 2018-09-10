@@ -32,23 +32,22 @@ public class SettingFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         saveBtn = getActivity().findViewById(R.id.setting_save_btn);
         posEt = getActivity().findViewById(R.id.setting_pos);
-        SharedPreferences reader = getActivity().getSharedPreferences("status",getActivity().MODE_PRIVATE);
-        String pos = reader.getString("position","").toString();
-        String status = reader.getString("status","").toString();
-        posEt.setText(pos);
+        SharedPreferences reader = getActivity().getSharedPreferences("settings",getActivity().MODE_PRIVATE);
+        String mqurl = reader.getString("mqtt_server","").toString();
+        posEt.setText(mqurl);
 
 
 
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String pos = posEt.getText().toString();
-               if(StringUtil.isEmpty(pos)){
-                   Toast.makeText(getActivity(),"位置不能为空",Toast.LENGTH_SHORT).show();
+                String mqurl = posEt.getText().toString();
+               if(StringUtil.isEmpty(mqurl)){
+                   Toast.makeText(getActivity(),"服务器地址不能为空",Toast.LENGTH_SHORT).show();
                    return;
                }
-               SharedPreferences.Editor editor = getActivity().getSharedPreferences("status",getActivity().MODE_PRIVATE).edit();
-               editor.putString("position",pos);
+               SharedPreferences.Editor editor = getActivity().getSharedPreferences("settings",getActivity().MODE_PRIVATE).edit();
+               editor.putString("mqtt_server",mqurl);
                editor.commit();
                 Toast.makeText(getActivity(),"保存成功",Toast.LENGTH_SHORT).show();
             }
