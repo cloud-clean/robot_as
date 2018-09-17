@@ -1,10 +1,11 @@
 package com.clean.lot.fragment;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,8 +17,12 @@ import android.widget.ToggleButton;
 
 import com.clean.lot.R;
 import com.clean.lot.entity.MessageEvent;
+import com.clean.lot.entity.event.LampEvent;
+import com.clean.lot.util.HttpUtil;
 
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 
 public class ControlFragment extends Fragment {
@@ -30,7 +35,7 @@ public class ControlFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.control_fragment,container,false);
-
+        EventBus.getDefault().register(this);
         return view;
     }
 
@@ -40,9 +45,8 @@ public class ControlFragment extends Fragment {
         lampBtn = getActivity().findViewById(R.id.lamp_btn);
         imageView = getActivity().findViewById(R.id.lamp);
         radioGroup = getActivity().findViewById(R.id.radis_pos);
+
         lampBtn.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-//        SharedPreferences reader = getActivity().getSharedPreferences("status",getActivity().MODE_PRIVATE);
-//        String pos = reader.getString("position","").toString();
         MessageEvent msg = null;
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, final boolean b) {
@@ -55,6 +59,7 @@ public class ControlFragment extends Fragment {
                 imageView.setImageResource(b?R.drawable.lamp_on:R.drawable.lamp_off);
             }
         });
+
         radioGroup = getActivity().findViewById(R.id.radis_pos);
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -62,8 +67,23 @@ public class ControlFragment extends Fragment {
                 int id = radioGroup.getCheckedRadioButtonId();
                 RadioButton choise = getActivity().findViewById(id);
                 pos = choise.getText().toString().trim();
+//                String url = "http://lot.btprice.com/api/lot?pos="+pos;
+                String url = "http://202.182.118.148/api/lot?pos="+pos;
+                Log.d("lamp",url);
+                HttpUtil.okGet(url);
             }
         });
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void subscribe(LampEvent event){
+        if("1".equals(event.getStatus())){
+            imageView.setImageResource(R.drawable.lamp_on);
+            lampBtn.setChecked(true);
+        }else {
+            imageView.setImageResource(R.drawable.lamp_off);
+            lampBtn.setChecked(false);
+        }
     }
 
 }

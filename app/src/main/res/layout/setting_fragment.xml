@@ -11,9 +11,9 @@
         android:layout_height="50dp">
         <TextView
             android:layout_marginLeft="5dp"
-            android:layout_width="70dp"
+            android:layout_width="120dp"
             android:layout_height="50dp"
-            android:text="位置:"
+            android:text="MQ服务器:"
             android:textSize="20sp" />
 
         <EditText

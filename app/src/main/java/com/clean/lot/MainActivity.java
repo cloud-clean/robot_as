@@ -1,5 +1,7 @@
 package com.clean.lot;
 
+import android.Manifest;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -14,6 +16,8 @@ import com.clean.lot.entity.MessageEvent;
 import com.clean.lot.fragment.ControlFragment;
 import com.clean.lot.fragment.IndexFragment;
 import com.clean.lot.fragment.SettingFragment;
+import com.clean.lot.service.MqttService;
+import com.clean.lot.tools.PermissionsChecker;
 import com.clean.lot.util.StringUtil;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
@@ -30,12 +34,28 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 public class MainActivity extends AppCompatActivity {
-
-    private String ClientId = "lot_";
-    final String mqttServer = "";
-    final String pushTopic = "lot";
-    private MqttAndroidClient mqttClient;
     private Fragment currentFragment;
+    // 所需的全部权限
+    static final String[] PERMISSIONS = new String[]{
+            Manifest.permission.READ_PHONE_STATE
+    };
+
+    private PermissionsChecker mPermissionsChecker;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+        currentFragment = new IndexFragment();
+        getSupportFragmentManager().beginTransaction()
+                .add(R.id.fragment_contrainer, currentFragment,"index")
+                .commit();
+        Intent intentMqttService = new Intent(this, MqttService.class);
+        startService(intentMqttService);
+    }
 
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
@@ -50,9 +70,6 @@ public class MainActivity extends AppCompatActivity {
                         index = new IndexFragment();
                     }
                     switchFragment(R.id.fragment_contrainer,"index",index);
-//                    getSupportFragmentManager().beginTransaction()
-//                            .replace(R.id.fragment_contrainer,index,"index")
-//                            .commit();
                     return true;
                 case R.id.navigation_dashboard:
                     Fragment control = getSupportFragmentManager().findFragmentByTag("control");
@@ -60,9 +77,6 @@ public class MainActivity extends AppCompatActivity {
                         control = new ControlFragment();
                     }
                     switchFragment(R.id.fragment_contrainer,"control",control);
-//                    getSupportFragmentManager().beginTransaction()
-//                            .replace(R.id.fragment_contrainer,control,"control")
-//                            .commit();
                     return true;
                 case R.id.navigation_notifications:
                     Fragment settings = getSupportFragmentManager().findFragmentByTag("settings");
@@ -70,9 +84,6 @@ public class MainActivity extends AppCompatActivity {
                         settings = new SettingFragment();
                     }
                     switchFragment(R.id.fragment_contrainer,"settings",settings);
-//                    getSupportFragmentManager().beginTransaction()
-//                            .replace(R.id.fragment_contrainer,settings,"settings")
-//                            .commit();
                     return true;
             }
             return false;
@@ -82,98 +93,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        //注销注册
-        EventBus.getDefault().unregister(this);
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-        currentFragment = new IndexFragment();
-        getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragment_contrainer, currentFragment,"index")
-                .commit();
-        SharedPreferences reader = getSharedPreferences("settings",MODE_PRIVATE);
-        String mqttServer = reader.getString("mqtt_server","tcp://202.182.118.148:61613").toString();
-        if(StringUtil.isNotEmpty(mqttServer)){
-            if(!mqttServer.startsWith("tcp")){
-                mqttServer = "tcp://"+mqttServer;
-            }
-        }
 
 
-        EventBus.getDefault().register(this);
-        ClientId  = ClientId+System.currentTimeMillis();
-        mqttClient = new MqttAndroidClient(getApplicationContext(),mqttServer,ClientId);
-        mqttClient.setCallback(new MqttCallback() {
-            @Override
-            public void connectionLost(Throwable cause) {
-                System.out.println("connect lost");
-            }
 
-            @Override
-            public void messageArrived(String topic, MqttMessage message) throws Exception {
-                System.out.println("receive msg");
-            }
-
-            @Override
-            public void deliveryComplete(IMqttDeliveryToken token) {
-                System.out.println("push msg");
-            }
-        });
-
-        MqttConnectOptions mqttConnectOptions = new MqttConnectOptions();
-        mqttConnectOptions.setAutomaticReconnect(true);
-        mqttConnectOptions.setCleanSession(false);
-        mqttConnectOptions.setUserName("lot2");
-        mqttConnectOptions.setPassword("cloudhai".toCharArray());
-        try{
-            mqttClient.connect(mqttConnectOptions, null, new IMqttActionListener() {
-                @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
-                    System.out.println("connect success");
-                    DisconnectedBufferOptions disconnectedBufferOptions = new DisconnectedBufferOptions();
-                    disconnectedBufferOptions.setBufferEnabled(true);
-                    disconnectedBufferOptions.setBufferSize(100);
-                    disconnectedBufferOptions.setPersistBuffer(false);
-                    disconnectedBufferOptions.setDeleteOldestMessages(false);
-                    mqttClient.setBufferOpts(disconnectedBufferOptions);
-                }
-
-                @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    System.out.println("connect faild");
-
-                }
-            });
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    public void publishMessage(String msg){
-        try {
-            MqttMessage message = new MqttMessage();
-            message.setPayload(msg.getBytes());
-            message.setQos(1);
-            IMqttDeliveryToken token = mqttClient.publish(pushTopic, message);
-            System.out.println("send out msg:"+msg);
-        } catch (MqttException e) {
-            System.err.println("Error Publishing: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    public void messageEventBus(MessageEvent event){
-        if(event != null){
-            String msg = JSON.toJSONString(event);
-            publishMessage(msg);
-        }
-    }
 
     private void switchFragment(int id,String targetName,Fragment targetFragment){
         FragmentTransaction transaction = getSupportFragmentManager()
@@ -187,9 +111,6 @@ public class MainActivity extends AppCompatActivity {
         currentFragment = targetFragment;
         transaction.commit();
     }
-
-
-
 
 
 }

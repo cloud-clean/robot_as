@@ -1,11 +1,18 @@
 package com.clean.lot.util;
 
 import android.os.StrictMode;
+import android.util.EventLog;
+import android.util.Log;
 import android.util.TimeUtils;
 import android.view.View;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.clean.lot.entity.WebResult;
+import com.clean.lot.entity.event.LampEvent;
+import com.clean.lot.handler.ViewHandler;
+
+import org.greenrobot.eventbus.EventBus;
 
 import javax.net.ssl.*;
 import java.io.*;
@@ -39,22 +46,36 @@ public class HttpUtil {
     private static final String HTTP_PUT = "PUT";
 
 
-    public static String okGet(String url){
-        OkHttpClient client = new OkHttpClient.Builder().readTimeout(10, TimeUnit.SECONDS).build();
+    public static void okGet(String url){
+        OkHttpClient client = new OkHttpClient.Builder()
+                .readTimeout(3, TimeUnit.SECONDS)
+                .connectTimeout(3,TimeUnit.SECONDS)
+                .writeTimeout(2,TimeUnit.SECONDS)
+                .build();
         Request request = new Request.Builder().url(url).get().build();
         Call call = client.newCall(request);
-        try{
-            Response response = call.execute();
-            if(response.isSuccessful()){
-                return response.body().string();
-            }else {
-                return "";
+        call.enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
             }
-        }catch (Exception e){
-            e.printStackTrace();
-            return "";
-        }
 
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String responseStr = response.body().string();
+                Log.d("http",responseStr);
+                WebResult result = JSON.parseObject(responseStr, WebResult.class);
+                if(result.getCode() == 1){
+                    LampEvent event = new LampEvent();
+                    JSONObject json = result.getResult().getJSONObject("data");
+                    String pos = json.getString("pos");
+                    String status = json.getString("status");
+                    event.setPos(pos);
+                    event.setStatus(status);
+                    EventBus.getDefault().post(event);
+                }
+            }
+        });
     }
 
 

@@ -8,4 +8,8 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="MySwitch" parent="@android:style/Widget.CompoundButton">
+        <item name="android:button">@drawable/switch_btn</item>
+    </style>
+
 </resources>
